@@ -226,6 +226,33 @@ def select_course(db):
     )
     return found_course
 
+def select_student(db):
+    collection = db["students"]
+
+    found: bool = False
+    lastName: str = ''
+    firstName: str = ''
+    while not found:
+        lastName = input("Student's last name-->")
+        firstName = input("Student's first name -->")
+
+        student_count = collection.count_documents(
+            {
+                "Last Name": lastName,
+                "First Name": firstName
+            }
+        )
+        found = student_count == 1
+        if not found:
+            print("No student found by that name.  Try again.")
+    found_student = collection.find_one(
+        {
+            "Last Name": lastName,
+            "First name": firstName
+        }
+    )
+    return found_student
+
 
 def delete_department(db):
     department = select_department(db)
@@ -252,6 +279,13 @@ def delete_course(db):
         }
     )
     print(f"We just deleted: {deleted.deleted_count} courses")
+def delete_student(db):
+    student = select_student(db)
+
+    students = db["students"]
+    deleted = students.delete_one({"_id": student["_id"]})
+    print(f"We just deleted: {deleted.deleted_count} students.")
+
 
 def list_departments(db):
     departments = db["departments"].find({}).sort([("name",pymongo.ASCENDING)])
@@ -375,6 +409,16 @@ if __name__ == '__main__':
         print("courseNumber index present")
     else:
         courses.create_index([('Course Number', pymongo.ASCENDING)], unique=True, name="course_number")
+
+    students_index = students.index_information()
+    if 'last_name' in students_index.keys():
+        print("lastName in index present")
+    else:
+        students.create_index([('Last Name', pymongo.ASCENDING)], name="last_name")
+    if 'first_name' in students_index.keys():
+        print("firstname in index present")
+    else:
+        students.create_index([('First Name', pymongo.ASCENDING)], name="first_name")
 
     pprint(departments.index_information())
     pprint(courses.index_information())
