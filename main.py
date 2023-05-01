@@ -244,14 +244,37 @@ def select_student(db):
         )
         found = student_count == 1
         if not found:
-            print("No student found by that name.  Try again.")
+            print("No student found with that name.  Try again.")
     found_student = collection.find_one(
-        {
-            "Last Name": lastName,
-            "First name": firstName
-        }
+        {"Last Name": lastName,
+         "First Name": firstName
+         }
     )
     return found_student
+
+def select_major(db):
+    collection = db["majors"]
+
+    found: bool = False
+    name: str = ''
+    while not found:
+        name = input("Enter major name: ")
+
+        major_count = collection.count_documents(
+            {
+                "Major Name": name
+            }
+        )
+        found = major_count == 1
+        if not found:
+            print("No major found with that name.  Please try again")
+
+    found_major = collection.find_one(
+        {
+            "Major Name": name
+        }
+    )
+    return found_major
 
 
 def delete_department(db):
@@ -281,10 +304,16 @@ def delete_course(db):
     print(f"We just deleted: {deleted.deleted_count} courses")
 def delete_student(db):
     student = select_student(db)
-
     students = db["students"]
     deleted = students.delete_one({"_id": student["_id"]})
-    print(f"We just deleted: {deleted.deleted_count} students.")
+    print(f"We just deleted: {deleted.deleted_count} students")
+
+def delete_major(db):
+    major = select_major(db)
+
+    majors = db["majors"]
+    deleted = majors.delete_one({"_id": major["_id"]})
+    print(f"We just deleted: {deleted.deleted_count} majors.")
 
 
 def list_departments(db):
