@@ -99,13 +99,14 @@ def add_department(db):
 
 def add_course(db):
     collection = db["courses"]
-    abbreviation = input("Abbreviation: ")
+    department = select_department(db)
+    abbreviation = department["abbreviation"]
     number = input("Course number: ")
     name = input("Course Name: ")
     description = input("Course description: ")
     unit = input("Course unit: ")
     course = {
-        "Department Abbreviation": abbreviation, #Need to figure out how to migrate department abbreviation
+        "Department Abbreviation": abbreviation,
         "Course Number": number,
         "Course Name": name,
         "description": description,
@@ -126,6 +127,65 @@ def add_course(db):
     )
     return results
 
+def add_section(db):
+    collection =  db["sections"]
+    course = select_course(db)
+    departmentAbbreviation = course["Department Abbreviation"]
+    courseNumber = course["Course Number"]
+    semester = input("Semester: ")
+    sectionYear = input("Year: ")
+    building = input("Building: ")
+    roomNumber = input("Room number: ")
+    schedule = input("Schedule: ")
+    startTime = input("start Time: ")
+    instructor = input("Instructor: ")
+
+    section = {
+        "Department Abbreviation": departmentAbbreviation,
+        "Course Number": courseNumber,
+        "Semester": semester,
+        "Year": sectionYear,
+        "Building": building,
+        "Room": roomNumber,
+        "schedule": schedule,
+        "Start Time": startTime,
+        "Instructor": instructor
+    }
+
+    results = collection.insert_one(section)
+    return results
+
+def add_student(db):
+    collection = db["students"]
+    lastName = input("Student last name: ")
+    firstName = input("Student first name: ")
+    email = input("Student email: ")
+
+    student = {
+        "Last Name": lastName,
+        "First Name": firstName,
+        "email": email
+    }
+
+    results = collection.insert_one(student)
+    return results
+
+def add_major(db):
+    collection = db["majors"]
+    department = select_department(db)
+    departmentAbbreviation = department["abbreviation"]
+    majorName = input("name: ")
+    description = input("description: ")
+
+    major = {
+        "Department Abbreviation": departmentAbbreviation,
+        "Major Name": majorName,
+        "Description": description
+    }
+
+    results = collection.insert_one(major)
+    return results
+
 def select_department(db):
     collection = db["departments"]
 
@@ -140,6 +200,32 @@ def select_department(db):
     found_department = collection.find_one({"abbreviation": abbreviation})
     return found_department
 
+def select_course(db):
+    collection = db["courses"]
+
+    found: bool = False
+    departmentAbbreviation: str = ''
+    courseNumber: str = ''
+    while not found:
+        departmentAbbreviation = input("Enter the department abbreviation: ")
+        courseNumber = input("Enter the course number: ")
+
+        course_count = collection.count_documents(
+            {
+                "Department Abbreviation": departmentAbbreviation,
+                "Course Number": courseNumber
+            }
+        )
+        found = course_count == 1
+        if not found:
+            print("No courses were found.  Try again")
+    found_course = collection.find_one(
+        {"Department Abbreviation": departmentAbbreviation,
+         "Course Number": courseNumber
+         }
+    )
+    return found_course
+
 
 def delete_department(db):
     department = select_department(db)
@@ -149,31 +235,12 @@ def delete_department(db):
     print(f"We just deleted: {deleted.deleted_count} departments.")
 
 def delete_course(db):
+    course = select_course(db)
     courses = db["courses"]
-    found: bool = False
-    departmentAbbreviation: str = ''
-    courseNumber: str = ''
-    while not found:
-        departmentAbbreviation = input("Enter the department abbreviation: ")
-        courseNumber = input("Enter the course number: ")
+    departmentAbbreviation = course["Department Abbreviation"]
+    courseNumber = course["Course Number"]
 
-        course_count = courses.count_documents(
-            {
-                "Department Abbreviation": departmentAbbreviation,
-                "Course Number": courseNumber
-            }
-        )
-        found = course_count == 1
-        if not found:
-            print("No courses were found.  Try again")
-
-    found_course = courses.find_one(
-        {"Department Abbreviation": departmentAbbreviation,
-         "Course Number": courseNumber
-        }
-    )
-
-    deleted = courses.delete_one({"_id": found_course["_id"]})
+    deleted = courses.delete_one({"_id": course["_id"]})
     db["departments"].update_many(
         {'abbreviation': departmentAbbreviation},
         {'$pull':
@@ -196,6 +263,15 @@ def list_course(db):
     for course in courses:
         pprint(course)
 
+def list_major(db):
+    majors = db["majors"].find({}).sort([("Major Name", pymongo.ASCENDING)])
+    for major in majors:
+        pprint(major)
+
+def list_student(db):
+    students = db["students"].find({}).sort([("Last Name", pymongo.ASCENDING)])
+    for student in students:
+        pprint(student)
 
 def list_objects(db):
     """
@@ -255,6 +331,9 @@ if __name__ == '__main__':
 
     departments = db["departments"]
     courses = db["courses"]
+    majors = db["majors"]
+    sections = db["sections"]
+    students = db["students"]
     # Ask if this is how you add the department_validator
     db.command('collMod', 'departments', **department_validator)
     department_count = departments.count_documents({})
@@ -291,11 +370,11 @@ if __name__ == '__main__':
     if 'course_name' in courses_index.keys():
         print("courseName index present")
     else:
-        courses.create_index([('courseName', pymongo.ASCENDING)], unique=True, name="course_name")
+        courses.create_index([('Course Name', pymongo.ASCENDING)], unique=True, name="course_name")
     if 'course_number' in courses.index_information():
         print("courseNumber index present")
     else:
-        courses.create_index([('courseNumber', pymongo.ASCENDING)], unique=True, name="course_number")
+        courses.create_index([('Course Number', pymongo.ASCENDING)], unique=True, name="course_number")
 
     pprint(departments.index_information())
     pprint(courses.index_information())
