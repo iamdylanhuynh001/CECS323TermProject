@@ -502,6 +502,48 @@ department_validator = {
     }
 }
 
+sections_validator = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': "object",
+            'description': "An organization that offers one or more degree programs within a college, "
+                           "within a university",
+            'required': ["sectionNumber", "semester", "sectionYear", "building", "room", "schedule", "startTime", "instructor"],
+            'properties': {
+                'sectionNumber': {
+                    'bsonType': "int",
+                },
+                'semester': {
+                    'bsonType': "string",
+                    'enum': ["Fall", "Spring", "Summer I", "Summer II", "Summer III", "Winter"]
+                },
+                'sectionYear': {
+                    'bsonType': "int",
+                },
+                'building': {
+                    'bsonType': "string",
+                    'enum': ["ANAC", "CDC", "DC", "ECS", "EN2", "EN3", "EN4", "EN5", "ET", "HSCI", "NUR", "VEC"]
+                },
+                'room': {
+                    'bsonType': "int",
+                    'minLength': 0,
+                    'maxLength': 1000
+                },
+                'schedule': {
+                    'bsonType': "string",
+                    'enum': ["MW", "TuTH", "MWF", "F", "S"]
+                },
+                'startTime': {
+                    'bsonType': "datetime",
+                },
+                'instructor': {
+                    'bsonType': "string",
+                }
+            }
+        }
+    }
+}
+
 enrollment_validator = {
     'validator': {
         '$jsonSchema': {
