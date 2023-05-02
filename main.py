@@ -80,7 +80,7 @@ def add_department(db):
                         if not unique_description:
                             print("A department already has that description.  Try again.")
 
-        #Build a new departments document preparatory to storing it
+        # Build a new departments document preparatory to storing it
         department = {
             "name": name,
             "abbreviation": abbreviation,
@@ -88,7 +88,7 @@ def add_department(db):
             "building": building,
             "office": office,
             "description": description,
-            "courses": [] #Need to find a way to to insert ID references for courses
+            "courses": []  # Need to find a way to insert ID references for courses
         }
         results = collection.insert_one(department)
         return results
@@ -110,25 +110,26 @@ def add_course(db):
         "Course Number": number,
         "Course Name": name,
         "description": description,
-        "units": unit
+        "units": unit,
+        "sections": []
     }
     results = collection.insert_one(course)
     db["departments"].update_many(
         {'abbreviation': abbreviation},
         {'$push':
-             {
-                 'courses':{
-                     'Course Name': name,
-                     'Course Number': number,
-                     'units:': unit
-                 }
-             }
+            {
+                'courses': {
+                    'Course Name': name,
+                    'Course Number': number,
+                    'units': unit
+                }
+            }
         }
     )
     return results
 
 def add_section(db):
-    collection =  db["sections"]
+    collection = db["sections"]
     course = select_course(db)
     departmentAbbreviation = course["Department Abbreviation"]
     courseNumber = course["Course Number"]
@@ -147,13 +148,39 @@ def add_section(db):
         "Year": sectionYear,
         "Building": building,
         "Room": roomNumber,
-        "schedule": schedule,
+        "Schedule": schedule,
         "Start Time": startTime,
         "Instructor": instructor
     }
-
     results = collection.insert_one(section)
+    course_update(db, departmentAbbreviation, courseNumber)
     return results
+
+def course_update(db, departmentAbbreviation, courseNumber):
+    collection = db["courses"]
+    found_course = collection.find_one(
+        {"Department Abbreviation": departmentAbbreviation,
+         "Course Number": courseNumber
+         }
+    )
+    collection.update_many(
+        {'Department Abbreviation': departmentAbbreviation,
+         'Course Number': courseNumber
+         },
+        {'$push':
+            {
+                'sections': {
+                    'Section ID': found_course["_id"],
+                    'Semester': found_course["Semester"],
+                    'Year': found_course["Year"],
+                    'Room': found_course["Room"],
+                    'Schedule': found_course["Schedule"],
+                    'Instructor': found_course["Instructor"]
+                }
+            }
+        }
+    )
+
 
 def add_student(db):
     collection = db["students"]
@@ -184,6 +211,21 @@ def add_major(db):
     }
 
     results = collection.insert_one(major)
+    return results
+
+def add_enrollment(db):
+    collection = db["enrollments"]
+    student = select_student(db)
+    section = select_section(db)
+
+    enrollment = {
+        "Student ID": student["_id"],
+        "Section ID": section["_id"],
+        "Student": [],
+        "Section": []
+    }
+
+    results = collection.insert_one(enrollment)
     return results
 
 def select_department(db):
@@ -276,6 +318,37 @@ def select_major(db):
     )
     return found_major
 
+def select_section(db):  # TODO
+    #NEED TO DOUBLE CHECK IF THIS IS THE CORRECT WAY TO SELECT SECTION
+    collection = db["sections"]
+
+    found: bool = False
+    while not found:
+        print("Please provide the course that this section belongs to:")
+        course = select_course(db)
+        semester = input("semester: ")
+        sectionYear = input("Section year: ")
+        section_count = collection.count_documents(
+            {
+                "Department Abbreviation": course["Department Abbreviation"],
+                "Course Number": course["Course Number"],
+                "Year": sectionYear,
+                "Semester": semester
+            }
+        )
+        found = section_count == 1
+        if not found:
+            print("No section found by that course, section#, semester & year.  Try again.")
+    found_section = collection.find_one(
+        {
+            "Department Abbreviation": course["Department Abbreviation"],
+            "Course Number": course["Course Number"],
+            "Year": sectionYear,
+            "Semester": semester
+        }
+    )
+    return found_section
+
 
 def delete_department(db):
     department = select_department(db)
@@ -302,6 +375,7 @@ def delete_course(db):
         }
     )
     print(f"We just deleted: {deleted.deleted_count} courses")
+
 def delete_student(db):
     student = select_student(db)
     students = db["students"]
@@ -315,9 +389,16 @@ def delete_major(db):
     deleted = majors.delete_one({"_id": major["_id"]})
     print(f"We just deleted: {deleted.deleted_count} majors.")
 
+def delete_section(db): #TODO
+    section = select_section(db)
+
+    sections = db["sections"]
+    deleted = sections.delete_one({"_id": section["_id"]})
+    print(f"We just deleted: {deleted.deleted_count} sections.")
+
 
 def list_departments(db):
-    departments = db["departments"].find({}).sort([("name",pymongo.ASCENDING)])
+    departments = db["departments"].find({}).sort([("name", pymongo.ASCENDING)])
     for department in departments:
         pprint(department)
 
@@ -335,6 +416,11 @@ def list_student(db):
     students = db["students"].find({}).sort([("Last Name", pymongo.ASCENDING)])
     for student in students:
         pprint(student)
+
+def list_section(db):
+    sections = db["sections"].find({}).sort([("Last Name", pymongo.ASCENDING)])
+    for section in sections:
+        pprint(section)
 
 def list_objects(db):
     """
@@ -388,9 +474,9 @@ department_validator = {
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     load_dotenv()
-    cluster = os.getenv("url") #Change to your MongoDB url thingy
+    cluster = os.getenv("url")  # Change to your MongoDB url thingy
     client = MongoClient(cluster)
-    db = client["CECS323Database"]  #Change to your database
+    db = client["CECS323Database"]  # Change to your database
 
     departments = db["departments"]
     courses = db["courses"]
