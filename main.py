@@ -98,13 +98,44 @@ def add_department(db):
 
 
 def add_course(db):
+    '''
+    courseNumber - Int
+    courseName - String
+    description - String
+    units - Int
+
+
+    {departmentAbbreviation, courseNumber}  
+    {departmentAbbreviation, courseName}
+    '''
     collection = db["courses"]
     department = select_department(db)
     abbreviation = department["abbreviation"]
-    number = input("Course number: ")
-    name = input("Course Name: ")
-    description = input("Course description: ")
-    unit = input("Course unit: ")
+    # number = input("Course number: ")
+    # name = input("Course Name: ")
+    # description = input("Course description: ")
+    # unit = input("Course unit: ")
+
+    unique_abbr_and_number: bool = False
+    unique_abbr_and_name: False
+    
+    name: str = ''
+    number: int = -1
+    description = str = ''
+    unit: int = -1
+
+    while not unique_abbr_and_number or not unique_abbr_and_name:
+        name = input("Course Name: ")
+        number = int(input("Course number: "))
+        description = input("Course description: ")
+        unit = int(input("Course unit: "))
+        num_count: int = collection.count_documents({"abbreviation": abbreviation, "number": number})
+        unique_abbr_and_number = num_count == 0
+        if not unique_abbr_and_number:
+                print("We already have a course in that department with that number.  Try again.")
+        if unique_abbr_and_number:
+                name_count = collection.count_documents({"abbreviation": abbreviation, "name": name})
+                unique_abbr_and_name = name_count == 0
     course = {
         "Department Abbreviation": abbreviation,
         "Course Number": number,
