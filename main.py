@@ -471,6 +471,44 @@ department_validator = {
     }
 }
 
+enrollment_validator = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': "object",
+            'description': "An organization that offers one or more degree programs within a college, "
+                           "within a university",
+            # 'required': ["name", "abbreviation", "chair_name", "building", "office", "description"],
+            'properties': {
+                'category_data': {
+                    'oneOf':[
+                        {
+                            'bsonType': 'object',
+                            'required': ['applicationDate'],
+                            'additionalProperties': False,
+                            'properties': {
+                                'applicationDate' : {
+                                    'bsonType': 'date'
+                                }
+                            }
+                        }, 
+
+                        {
+                            'bsonType': 'object',
+                            'required': ['minSatisfactory'],
+                            'additionalProperties': False,
+                            'properties': {
+                                'minSatisfactory' : {
+                                    'bsonType': 'String'
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     load_dotenv()
