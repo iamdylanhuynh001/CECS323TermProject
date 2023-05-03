@@ -209,7 +209,8 @@ def add_student(db):
     student = {
         "Last Name": lastName,
         "First Name": firstName,
-        "email": email
+        "email": email,
+        "major": []
     }
 
     results = collection.insert_one(student)
@@ -225,12 +226,45 @@ def add_major(db):
     major = {
         "Department Abbreviation": departmentAbbreviation,
         "Major Name": majorName,
-        "Description": description
+        "Description": description,
+        "Students": []
     }
 
     results = collection.insert_one(major)
     department_update_major(db, departmentAbbreviation, majorName)
     return results
+
+def add_student_major(db):
+    student = {}
+    major = {}
+    unique_student_major = False
+    while not unique_student_major:
+        student = select_student(db)
+        major = select_major(db)
+
+        if len(student["major"]) == 0:
+            unique_student_major = True
+            break
+
+        for object in student["major"]:
+            if object["Major ID"] != major["_id"]:
+                unique_student_major = True
+        print("That student already has that major.  Try again.")
+
+    db["students"].update_many(
+        {'_id': student["_id"]},
+        {'$push':
+             {
+                 "major":{
+                     'Major ID': major["_id"],
+                     'Major Name': major["Major Name"]
+                 }
+             }
+        }
+    )
+
+def add_major_student(db):
+    pass
 def department_update_major(db, departmentAbbreviation, majorName):
     collection = db["majors"]
     found_major= collection.find_one(
@@ -238,7 +272,6 @@ def department_update_major(db, departmentAbbreviation, majorName):
          "Major Name": majorName
          }
     )
-    pprint(found_major)
     db["departments"].update_many(
         {'abbreviation': departmentAbbreviation},
         {'$push':
