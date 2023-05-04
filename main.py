@@ -262,6 +262,18 @@ def add_student_major(db):
              }
         }
     )
+    db["majors"].update_many(
+        {'_id': major["_id"]},
+        {'$push':
+             {
+                 "students":{
+                     'Student ID': student["_id"],
+                     'Last Name': student["Last Name"],
+                     'First Name': student["First Name"]
+                 }
+             }
+        }
+    )
 
 def add_major_student(db):
     pass
