@@ -173,28 +173,77 @@ def department_update_course(db, abbreviation, number, name, unit):
     )
 
 def add_section(db):
+    '''
+    sectionNumber - Integer
+    semester - String
+    sectionYear - Integer
+    building - String
+    room - Integer
+    schedule - String
+    startTime - Time
+    instructor - String
+
+    {couse, sectionNumber, semester, sectionYear}
+    {semester, sectionyear, building, room, schedule, startTime}
+    {semester, sectionYear, schedule, startTime, instructor}
+    {semester, sectionYear, departmentAbbreviation, courseNumber, studentID}
+    '''
     collection = db["sections"]
     course = select_course(db)
     departmentAbbreviation = course["Department Abbreviation"]
     courseNumber = course["Course Number"]
-    semester = input("Semester: ")
-    sectionYear = input("Year: ")
-    building = input("Building: ")
-    roomNumber = input("Room number: ")
-    schedule = input("Schedule: ")
-    startTime = input("start Time: ")
-    instructor = input("Instructor: ")
+    # semester = input("Semester: ")
+    # sectionYear = input("Year: ")
+    # building = input("Building: ")
+    # roomNumber = input("Room number: ")
+    # schedule = input("Schedule: ")
+    # startTime = input("start Time: ")
+    # instructor = input("Instructor: ")
+    unique_sem_and_year: bool = False
+    unique_room: bool = False
+    unique_schedule: bool = False
+    unique_student: bool = False
+    studentID = _id #hello everyone i don't know how this works
+
+    while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student:
+        sectionNumber = int(input("Section number: "))
+        semester = input("Semester: ")
+        sectionYear = input("Year: ")
+        building = input("Building: ")
+        roomNumber = input("Room number: ")
+        schedule = input("Schedule: ")
+        startTime = input("start Time: ")
+        instructor = input("Instructor: ")
+        sem_and_year_count: int = collection.count_documents({"course": course, "section_number": sectionNumber, "semester": semester, "year": sectionYear})
+        unique_sem_and_year = sem_and_year_count == 0
+        if not unique_sem_and_year:
+            print("We already have a section with the same number going on in that school term. Try again.")
+        if unique_sem_and_year:
+            room_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "building": building, "room": roomNumber, "schedule": schedule, "start_time": startTime})
+            unique_room = room_count == 0
+            if not unique_room:
+                print("We already have a section with the same time going on in that location. Try again.")
+            if unique_room:
+                schedule_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "schedule": schedule, "start_time": startTime, "instructor": instructor})
+                unique_schedule = schedule_count == 0
+                if not unique_schedule:
+                    print("There's already an instructor with that start time. Try again")
+                if unique_schedule:
+                    student_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "department_abbrevation": departmentAbbreviation, "course_number": courseNumber, "_id": studentID})
+                    unique_student = student_count == 0
+                    
 
     section = {
-        "Department Abbreviation": departmentAbbreviation,
-        "Course Number": courseNumber,
-        "Semester": semester,
-        "Year": sectionYear,
-        "Building": building,
-        "Room": roomNumber,
-        "Schedule": schedule,
-        "Start Time": startTime,
-        "Instructor": instructor
+        "department_abbreviation": departmentAbbreviation,
+        "course_number": courseNumber,
+        "section_number": sectionNumber,
+        "semester": semester,
+        "year": sectionYear,
+        "building": building,
+        "room": roomNumber,
+        "schedule": schedule,
+        "start_time": startTime,
+        "instruction": instructor
     }
     results = collection.insert_one(section)
     course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
