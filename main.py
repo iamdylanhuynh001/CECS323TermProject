@@ -581,10 +581,67 @@ def delete_major(db):
     print(f"We just deleted: {deleted.deleted_count} majors.")
 
 def delete_student_major(db):
-    pass
+    student = select_student(db)
+    major = select_major(db)
+
+    db["students"].update_many(
+        {
+            '_id': student["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'major':{
+                        'Major ID': major["_id"]
+                    }
+                }
+        }
+    )
+    db["majors"].update_many(
+        {
+            '_id': major["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'Students':{
+                        'Student ID': student["_id"]
+                    }
+                }
+        }
+    )
+
 
 def delete_major_student(db):
-    pass
+    major = select_major(db)
+    student = select_student(db)
+
+    db["majors"].update_many(
+        {
+            '_id': major["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'Students': {
+                        'Student ID': student["_id"]
+                    }
+                }
+        }
+    )
+    db["students"].update_many(
+        {
+            '_id': student["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'major': {
+                        'Major ID': major["_id"]
+                    }
+                }
+        }
+    )
 
 def delete_section(db): #TODO
     section = select_section(db)
