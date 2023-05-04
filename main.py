@@ -331,14 +331,22 @@ def add_major(db):
     collection = db["majors"]
     department = select_department(db)
     departmentAbbreviation = department["abbreviation"]
-    majorName = input("name: ")
-    description = input("description: ")
+    # majorName = input("name: ")
+    # description = input("description: ")
 
+    unique_name: bool = False
+    while not unique_name:
+        majorName = input("Major name: ")
+        description = input("Description: ")
+        name_count: int = collection.count_documents({"major_name": majorName})
+        unique_name = name_count == 0
+        if not unique_name:
+            print("There is already a major by that name. Try again.")
     major = {
-        "Department Abbreviation": departmentAbbreviation,
-        "Major Name": majorName,
-        "Description": description,
-        "Students": []
+        "department_abbreviation": departmentAbbreviation,
+        "major_name": majorName,
+        "description": description,
+        "students": []
     }
 
     results = collection.insert_one(major)
@@ -578,6 +586,21 @@ def select_section(db):  # TODO
     )
     return found_section
 
+'''
+I blatantly stole this from professor's subschema code.
+Looks useful tho.
+God I hope someone reads this documentation
+'''
+def drop_collection(schema_ref, collection_name: str):
+    """
+    Little utility for dropping collections and letting the user know.
+    :param schema_ref:          The reference to the current schema.
+    :param collection_name:     The name of the collection to drop within that schema.
+    :return:                    None
+    """
+    if collection_name in schema_ref.list_collection_names():
+        print(f'Dropping collection: {collection_name}')
+        schema_ref[collection_name].drop()
 
 def delete_department(db):
     department = select_department(db)
@@ -797,6 +820,38 @@ department_validator = {
     }
 }
 
+course_validator = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': "object",
+            'description': "The classes offered in a program pertaining to an area of study ",
+            'required': ["course_number", "course_name", "description", "units"],
+            'properties': {
+                'course_number': {
+                    'bsonType': "int",
+                    'minimum': 100,
+                    'maximum': 699
+                },
+                'course_name': {
+                    'bsonType': "string",
+                    'minLength': 5,
+                    'maxLength': 50
+                },
+                'description': {
+                    'bsonType': "string",
+                    'minLength': 10,
+                    'maxLength': 80
+                },
+                'units': {
+                    'bsonType': "int",
+                    'minimum': 1,
+                    'maximum': 5
+                }
+            }
+        }
+    }
+}
+
 sections_validator = {
     'validator': {
         '$jsonSchema': {
@@ -846,27 +901,32 @@ enrollment_validator = {
             'description': "An organization that offers one or more degree programs within a college, "
                            "within a university",
             # 'required': ["name", "abbreviation", "chair_name", "building", "office", "description"],
+            'required': ['category_data'],
             'properties': {
                 'category_data': {
                     'oneOf':[
                         {
+                            #PassFail
                             'bsonType': 'object',
                             'required': ['applicationDate'],
                             'additionalProperties': False,
                             'properties': {
                                 'applicationDate' : {
-                                    'bsonType': 'date'
+                                    'bsonType': 'date',
+                                    'min': Date()
                                 }
                             }
                         }, 
 
                         {
+                            #LetterGrade
                             'bsonType': 'object',
                             'required': ['minSatisfactory'],
                             'additionalProperties': False,
                             'properties': {
                                 'minSatisfactory' : {
-                                    'bsonType': 'String'
+                                    'bsonType': 'String',
+                                    'enum': ["A", "B", "C"]
                                 }
                             }
                         }
