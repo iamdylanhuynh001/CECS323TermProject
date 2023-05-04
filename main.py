@@ -88,7 +88,8 @@ def add_department(db):
             "building": building,
             "office": office,
             "description": description,
-            "courses": []  # Need to find a way to insert ID references for courses
+            "courses": [],  # Need to find a way to insert ID references for courses
+            "majors": []
         }
         results = collection.insert_one(department)
         return results
@@ -145,19 +146,31 @@ def add_course(db):
         "sections": []
     }
     results = collection.insert_one(course)
+    department_update_course(db, abbreviation, number, name, unit)
+    return results
+def department_update_course(db, abbreviation, number, name, unit):
+    collection = db["courses"]
+    found_course = collection.find_one(
+        {"Department Abbreviation": abbreviation,
+         "Course Number": number,
+         "Course Name": name,
+         "units": unit
+         }
+    )
+
     db["departments"].update_many(
         {'abbreviation': abbreviation},
         {'$push':
             {
                 'courses': {
-                    'Course Name': name,
-                    'Course Number': number,
-                    'units': unit
+                    'Course ID': found_course["_id"],
+                    'Course Name': found_course["Course Name"],
+                    'Course Number': found_course["Course Number"],
+                    'units': found_course["units"]
                 }
             }
         }
     )
-    return results
 
 def add_section(db):
     collection = db["sections"]
@@ -184,29 +197,34 @@ def add_section(db):
         "Instructor": instructor
     }
     results = collection.insert_one(section)
-    course_update(db, departmentAbbreviation, courseNumber)
+    course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
     return results
 
-def course_update(db, departmentAbbreviation, courseNumber):
-    collection = db["courses"]
-    found_course = collection.find_one(
+def course_update_section(db, departmentAbbreviation, courseNumber, semester, year, building, room):
+    course = db["courses"]
+    collection = db["sections"]
+    found_section = collection.find_one(
         {"Department Abbreviation": departmentAbbreviation,
-         "Course Number": courseNumber
+         "Course Number": courseNumber,
+         "Semester": semester,
+         "Year": year,
+         "Building": building,
+         "Room": room
          }
     )
-    collection.update_many(
+    course.update_many(
         {'Department Abbreviation': departmentAbbreviation,
          'Course Number': courseNumber
          },
         {'$push':
             {
                 'sections': {
-                    'Section ID': found_course["_id"],
-                    'Semester': found_course["Semester"],
-                    'Year': found_course["Year"],
-                    'Room': found_course["Room"],
-                    'Schedule': found_course["Schedule"],
-                    'Instructor': found_course["Instructor"]
+                    'Section ID': found_section["_id"],
+                    'Semester': found_section["Semester"],
+                    'Year': found_section["Year"],
+                    'Room': found_section["Room"],
+                    'Schedule': found_section["Schedule"],
+                    'Instructor': found_section["Instructor"]
                 }
             }
         }
@@ -222,7 +240,8 @@ def add_student(db):
     student = {
         "Last Name": lastName,
         "First Name": firstName,
-        "email": email
+        "email": email,
+        "major": []
     }
 
     results = collection.insert_one(student)
@@ -238,11 +257,75 @@ def add_major(db):
     major = {
         "Department Abbreviation": departmentAbbreviation,
         "Major Name": majorName,
-        "Description": description
+        "Description": description,
+        "Students": []
     }
 
     results = collection.insert_one(major)
+    department_update_major(db, departmentAbbreviation, majorName)
     return results
+
+def add_student_major(db):
+    student = {}
+    major = {}
+    unique_student_major = False
+    while not unique_student_major:
+        student = select_student(db)
+        major = select_major(db)
+
+        if len(student["major"]) == 0:
+            unique_student_major = True
+            break
+
+        for object in student["major"]:
+            if object["Major ID"] != major["_id"]:
+                unique_student_major = True
+        print("That student already has that major.  Try again.")
+
+    db["students"].update_many(
+        {'_id': student["_id"]},
+        {'$push':
+             {
+                 "major":{
+                     'Major ID': major["_id"],
+                     'Major Name': major["Major Name"]
+                 }
+             }
+        }
+    )
+    db["majors"].update_many(
+        {'_id': major["_id"]},
+        {'$push':
+             {
+                 "students":{
+                     'Student ID': student["_id"],
+                     'Last Name': student["Last Name"],
+                     'First Name': student["First Name"]
+                 }
+             }
+        }
+    )
+
+def add_major_student(db):
+    pass
+def department_update_major(db, departmentAbbreviation, majorName):
+    collection = db["majors"]
+    found_major= collection.find_one(
+        {"Department Abbreviation": departmentAbbreviation,
+         "Major Name": majorName
+         }
+    )
+    db["departments"].update_many(
+        {'abbreviation': departmentAbbreviation},
+        {'$push':
+            {
+                "majors": {
+                    'Major ID': found_major["_id"],
+                    'Major Name': found_major["Major Name"]
+                }
+            }
+        }
+    )
 
 def add_enrollment(db):
     collection = db["enrollments"]
@@ -390,17 +473,18 @@ def delete_department(db):
 
 def delete_course(db):
     course = select_course(db)
+    if len(course["sections"]) != 0:
+        print("Can't delete course because there are some sections in this course!")
+        return
     courses = db["courses"]
-    departmentAbbreviation = course["Department Abbreviation"]
-    courseNumber = course["Course Number"]
 
     deleted = courses.delete_one({"_id": course["_id"]})
     db["departments"].update_many(
-        {'abbreviation': departmentAbbreviation},
+        {'abbreviation': course["Department Abbreviation"]},
         {'$pull':
             {
                 'courses': {
-                    'Course Number': courseNumber,
+                    'Course ID': course["_id"]
                 }
             }
         }
@@ -418,15 +502,37 @@ def delete_major(db):
 
     majors = db["majors"]
     deleted = majors.delete_one({"_id": major["_id"]})
+    db["departments"].update_many(
+        {'abbreviation': major["Department Abbreviation"]},
+        {'$pull':
+            {
+                'majors': {
+                    'Major ID': major["_id"]
+                }
+            }
+        }
+    )
     print(f"We just deleted: {deleted.deleted_count} majors.")
 
 def delete_section(db): #TODO
     section = select_section(db)
-
     sections = db["sections"]
+    db["courses"].update_many(
+        {
+            'Department Abbreviation': section["Department Abbreviation"],
+            'Course Number': section["Course Number"]
+        },
+        {
+            '$pull':
+                {
+                    'sections':{
+                        'Section ID': section["_id"]
+                    }
+                }
+        }
+    )
     deleted = sections.delete_one({"_id": section["_id"]})
     print(f"We just deleted: {deleted.deleted_count} sections.")
-
 
 def list_departments(db):
     departments = db["departments"].find({}).sort([("name", pymongo.ASCENDING)])
