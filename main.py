@@ -812,6 +812,38 @@ department_validator = {
     }
 }
 
+course_validator = {
+    'validator': {
+        '$jsonSchema': {
+            'bsonType': "object",
+            'description': "The classes offered in a program pertaining to an area of study ",
+            'required': ["course_number", "course_name", "description", "units"],
+            'properties': {
+                'course_number': {
+                    'bsonType': "int",
+                    'minimum': 100,
+                    'maximum': 699
+                },
+                'course_name': {
+                    'bsonType': "string",
+                    'minLength': 5,
+                    'maxLength': 50
+                },
+                'description': {
+                    'bsonType': "string",
+                    'minLength': 10,
+                    'maxLength': 80
+                },
+                'units': {
+                    'bsonType': "int",
+                    'minimum': 1,
+                    'maximum': 5
+                }
+            }
+        }
+    }
+}
+
 sections_validator = {
     'validator': {
         '$jsonSchema': {
