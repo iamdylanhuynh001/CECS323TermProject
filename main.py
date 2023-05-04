@@ -331,14 +331,22 @@ def add_major(db):
     collection = db["majors"]
     department = select_department(db)
     departmentAbbreviation = department["abbreviation"]
-    majorName = input("name: ")
-    description = input("description: ")
+    # majorName = input("name: ")
+    # description = input("description: ")
 
+    unique_name: bool = False
+    while not unique_name:
+        majorName = input("Major name: ")
+        description = input("Description: ")
+        name_count: int = collection.count_documents({"major_name": majorName})
+        unique_name = name_count == 0
+        if not unique_name:
+            print("There is already a major by that name. Try again.")
     major = {
-        "Department Abbreviation": departmentAbbreviation,
-        "Major Name": majorName,
-        "Description": description,
-        "Students": []
+        "department_abbreviation": departmentAbbreviation,
+        "major_name": majorName,
+        "description": description,
+        "students": []
     }
 
     results = collection.insert_one(major)
