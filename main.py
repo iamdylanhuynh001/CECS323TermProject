@@ -304,15 +304,13 @@ def add_student_major(db):
         student = select_student(db)
         major = select_major(db)
 
-        if len(student["major"]) == 0:
-            unique_student_major = True
-            break
-
+        student_major_count = 0
         for object in student["major"]:
-            if object["Major ID"] != major["_id"]:
-                unique_student_major = True
-        print("That student already has that major.  Try again.")
-
+            if object["Major ID"] == major["_id"]:
+                student_major_count += 1
+        unique_student_major = student_major_count == 0
+        if not unique_student_major:
+            print("That student already has that major.  Try again.")
     db["students"].update_many(
         {'_id': student["_id"]},
         {'$push':
@@ -328,7 +326,7 @@ def add_student_major(db):
         {'_id': major["_id"]},
         {'$push':
              {
-                 "students":{
+                 "Students":{
                      'Student ID': student["_id"],
                      'Last Name': student["Last Name"],
                      'First Name': student["First Name"]
@@ -338,7 +336,44 @@ def add_student_major(db):
     )
 
 def add_major_student(db):
-    pass
+    major = {}
+    student = {}
+    unique_student_major = False
+
+    while not unique_student_major:
+        major = select_major(db)
+        student = select_student(db)
+
+        student_major_count = 0
+        for object in major["Students"]:
+            if object["Student ID"] == student["_id"]:
+                student_major_count += 1
+        unique_student_major = student_major_count == 0
+        if not unique_student_major:
+            print("That major already has that student.  Try again.")
+    db["students"].update_many(
+        {'_id': student["_id"]},
+        {'$push':
+            {
+                "major": {
+                    'Major ID': major["_id"],
+                    'Major Name': major["Major Name"]
+                }
+            }
+        }
+    )
+    db["majors"].update_many(
+        {'_id': major["_id"]},
+        {'$push':
+            {
+                "Students": {
+                    'Student ID': student["_id"],
+                    'Last Name': student["Last Name"],
+                    'First Name': student["First Name"]
+                }
+            }
+        }
+    )
 def department_update_major(db, departmentAbbreviation, majorName):
     collection = db["majors"]
     found_major= collection.find_one(
@@ -545,6 +580,69 @@ def delete_major(db):
     )
     print(f"We just deleted: {deleted.deleted_count} majors.")
 
+def delete_student_major(db):
+    student = select_student(db)
+    major = select_major(db)
+
+    db["students"].update_many(
+        {
+            '_id': student["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'major':{
+                        'Major ID': major["_id"]
+                    }
+                }
+        }
+    )
+    db["majors"].update_many(
+        {
+            '_id': major["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'Students':{
+                        'Student ID': student["_id"]
+                    }
+                }
+        }
+    )
+
+
+def delete_major_student(db):
+    major = select_major(db)
+    student = select_student(db)
+
+    db["majors"].update_many(
+        {
+            '_id': major["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'Students': {
+                        'Student ID': student["_id"]
+                    }
+                }
+        }
+    )
+    db["students"].update_many(
+        {
+            '_id': student["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'major': {
+                        'Major ID': major["_id"]
+                    }
+                }
+        }
+    )
+
 def delete_section(db): #TODO
     section = select_section(db)
     sections = db["sections"]
@@ -589,6 +687,17 @@ def list_section(db):
     sections = db["sections"].find({}).sort([("Last Name", pymongo.ASCENDING)])
     for section in sections:
         pprint(section)
+
+def list_student_major(db):
+    student = select_student(db)
+    for i in student["major"]:
+        print(i)
+
+def list_major_student(db):
+    major = select_major(db)
+    for i in major["Students"]:
+        print(i)
+
 
 def list_objects(db):
     """
