@@ -578,6 +578,21 @@ def select_section(db):  # TODO
     )
     return found_section
 
+'''
+I blatantly stole this from professor's subschema code.
+Looks useful tho.
+God I hope someone reads this documentation
+'''
+def drop_collection(schema_ref, collection_name: str):
+    """
+    Little utility for dropping collections and letting the user know.
+    :param schema_ref:          The reference to the current schema.
+    :param collection_name:     The name of the collection to drop within that schema.
+    :return:                    None
+    """
+    if collection_name in schema_ref.list_collection_names():
+        print(f'Dropping collection: {collection_name}')
+        schema_ref[collection_name].drop()
 
 def delete_department(db):
     department = select_department(db)
@@ -846,27 +861,32 @@ enrollment_validator = {
             'description': "An organization that offers one or more degree programs within a college, "
                            "within a university",
             # 'required': ["name", "abbreviation", "chair_name", "building", "office", "description"],
+            'required': ['category_data'],
             'properties': {
                 'category_data': {
                     'oneOf':[
                         {
+                            #PassFail
                             'bsonType': 'object',
                             'required': ['applicationDate'],
                             'additionalProperties': False,
                             'properties': {
                                 'applicationDate' : {
-                                    'bsonType': 'date'
+                                    'bsonType': 'date',
+                                    'min': Date()
                                 }
                             }
                         }, 
 
                         {
+                            #LetterGrade
                             'bsonType': 'object',
                             'required': ['minSatisfactory'],
                             'additionalProperties': False,
                             'properties': {
                                 'minSatisfactory' : {
-                                    'bsonType': 'String'
+                                    'bsonType': 'String',
+                                    'enum': ["A", "B", "C"]
                                 }
                             }
                         }
