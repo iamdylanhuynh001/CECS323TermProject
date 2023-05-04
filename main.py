@@ -232,10 +232,41 @@ def course_update_section(db, departmentAbbreviation, courseNumber, semester, ye
 
 
 def add_student(db):
+    '''
+    lastName: String
+    firstName: String
+    email: String
+
+
+    {lastName, firstName}
+    {email}
+    {_id} <-- aaccording to my research this should already be unique but if im wrong then im boo boo the fool
+    '''
     collection = db["students"]
-    lastName = input("Student last name: ")
-    firstName = input("Student first name: ")
-    email = input("Student email: ")
+    # lastName = input("Student last name: ")
+    # firstName = input("Student first name: ")
+    # email = input("Student email: ")
+
+    unique_name: bool = False
+    unique_email: bool = False
+
+    lastName: str = ''
+    firstName: str = ''
+    email: str = ''
+
+    while not unique_name or not unique_email:
+        lastName = input("Student last name: ")
+        firstName = input("Student first name: ")
+        email = input("Student email: ")
+        name_count: int = collection.count_documents({"lastName": lastName, "firstName": firstName})
+        unique_name = name_count == 0
+        if not unique_name:
+            print("There is already a student by that name. Try again")
+        if unique_name:
+            email_count = collection.count_documents({"email": email})
+            unique_email = email_count == 0
+            if not unique_email:
+                print("There is already a student with that email address. Try again")
 
     student = {
         "Last Name": lastName,
