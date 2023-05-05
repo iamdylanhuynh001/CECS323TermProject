@@ -980,25 +980,25 @@ def list_section(db):
 def list_student_major(db):
     student = select_student(db)
     for i in student["major"]:
-        print(i)
+        pprint(i)
 
 
 def list_major_student(db):
     major = select_major(db)
     for i in major["Students"]:
-        print(i)
+        pprint(i)
 
 
 def list_student_section(db):
     student = select_student(db)
     for i in student["enrollment"]:
-        print(i)
+        pprint(i)
 
 
 def list_section_student(db):
     section = select_section(db)
     for i in section["enrollments"]:
-        print(i)
+        pprint(i)
 
 
 def list_enrollment(db):
