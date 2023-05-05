@@ -214,9 +214,9 @@ def add_section(db):
     while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
         sectionNumber = int(input("Section number: "))
         semester = input("Semester: ")
-        sectionYear = input("Year: ")
+        sectionYear = int(input("Year: "))
         building = input("Building: ")
-        roomNumber = input("Room number: ")
+        roomNumber = int(input("Room number: "))
         schedule = input("Schedule: ")
         startTime = input("Please input hour:minute (24 Hour Time)--> ")
         instructor = input("Instructor: ")
@@ -257,7 +257,7 @@ def add_section(db):
         "Schedule": schedule,
         "Time": startTime,
         "Instructor": instructor,
-        "students": []
+        "enrollments": []
     }
     results = collection.insert_one(section)
     course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
@@ -357,10 +357,10 @@ def add_major(db):
         if not unique_name:
             print("There is already a major by that name. Try again.")
     major = {
-        "department_abbreviation": departmentAbbreviation,
-        "major_name": majorName,
+        "Department Abbreviation": departmentAbbreviation,
+        "Major Name": majorName,
         "description": description,
-        "students": []
+        "Students": []
     }
 
     results = collection.insert_one(major)
@@ -484,6 +484,10 @@ def add_student_PassFail(db):
         collection = db["enrollments"]
         student = select_student(db)
         section = select_section(db)
+        uniqueCheck = enrollmentUniqueness(db, section, student)
+        if not uniqueCheck:
+            print("The section and student are not unique!")
+            return
 
         enrollment = {
             "Student ID": student["_id"],
@@ -494,6 +498,7 @@ def add_student_PassFail(db):
             }
         }
         results = collection.insert_one(enrollment)
+        section_update_major(db, section, student)
         return results
     except Exception as e:
         print(e)
@@ -504,6 +509,11 @@ def add_student_LetterGrade(db):
         collection = db["enrollments"]
         student = select_student(db)
         section = select_section(db)
+        uniqueCheck = enrollmentUniqueness(db, section, student)
+        if not uniqueCheck:
+            print("The section and student are not unique!")
+            return
+
         grade = input("Enter the input A, B, or C: ")
 
         enrollment = {
@@ -515,20 +525,56 @@ def add_student_LetterGrade(db):
             }
         }
         results = collection.insert_one(enrollment)
+        section_update_major(db, section, student)
         return results
     except Exception as e:
         print(e)
 
-def enrollmentUniqueness(db, student, section):
+def section_update_major(db, section, student):
+    enrollment = db["enrollments"].find_one({"Student ID": student["_id"], "Section ID": section["_id"]})
 
-    section = select_section(db)
-    student = select_student(db)
+    db["sections"].update_many(
+        {'Course Number': section["Course Number"],
+         'Section Number': section["Section Number"],
+         'Semester': section["Semester"],
+         'Year': section["Year"]},
+        {'$push':
+            {
+                "enrollments": {
+                    'Student ID': student["_id"],
+                    'Last Name': student["Last Name"],
+                    'First Name': student["First Name"],
+                    'Enrollment ID': enrollment["_id"],
+                    'Enrollment Type': enrollment["Enrollment Type"]
+                }
+            }
+        }
+    )
 
-    ''''
-    student_count: int = db["sections"].count_documents(
-        {"semester": semester, "year": sectionYear, "department_abreviation: departmentAbbreviation,
-         "course_number": courseNumber,   "_id": studentID})
-    '''
+'''
+Return: True - not unique, False - Unique
+'''
+def enrollmentUniqueness(db, section, student):
+    student_count = 0
+    #count the section collection for semester, year, DA, CN
+    section_count: int = db["sections"].count_documents(
+        {"Semester": section["Semester"], "Year": section["Year"], "Department Abbreviation": section["Department Abbreviation"],
+         "Course Number": section["Course Number"]})
+    print(section_count)
+    #Student_count, count if there is match in the section array
+    for object in section["enrollments"]:
+        if object["Student ID"] == student["_id"]:
+            student_count += 1
+
+    print(student_count)
+    #If the student count and section count matches, that means it's not unique
+    result = student_count == section_count
+    if not result is True:
+        print("This bitch is unique")
+    else:
+        print("This bitch is not unique")
+    return not result
+
 
 def select_department(db):
     collection = db["departments"]
@@ -629,7 +675,7 @@ def select_section(db):
         course = select_course(db)
         sectionNumber = int(input("Section Number: "))
         semester = input("semester: ")
-        sectionYear = input("Section year: ")
+        sectionYear = int(input("Section year: "))
         section_count = collection.count_documents(
             {
                 "Department Abbreviation": course["Department Abbreviation"],
