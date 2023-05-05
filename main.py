@@ -208,7 +208,7 @@ def add_section(db):
     unique_room: bool = False
     unique_schedule: bool = False
     unique_student: bool = False
-    #studentID = _id #hello everyone i don't know how this works #TODO
+    #studentID = _id #hello everyone i don't know how this works #TODO REALLY NEED TO CHECK HOW THIS WORK
 
     while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student:
         sectionNumber = int(input("Section number: "))
@@ -219,17 +219,17 @@ def add_section(db):
         schedule = input("Schedule: ")
         startTime = input("start Time: ")
         instructor = input("Instructor: ")
-        sem_and_year_count: int = collection.count_documents({"course": course, "section_number": sectionNumber, "semester": semester, "year": sectionYear})
+        sem_and_year_count: int = collection.count_documents({"Course Number": courseNumber, "Section Number": sectionNumber, "Semester": semester, "Year": sectionYear})
         unique_sem_and_year = sem_and_year_count == 0
         if not unique_sem_and_year:
             print("We already have a section with the same number going on in that school term. Try again.")
         if unique_sem_and_year:
-            room_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "building": building, "room": roomNumber, "schedule": schedule, "start_time": startTime})
+            room_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Building": building, "Room": roomNumber, "Schedule": schedule, "Time": startTime})
             unique_room = room_count == 0
             if not unique_room:
                 print("We already have a section with the same time going on in that location. Try again.")
             if unique_room:
-                schedule_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "schedule": schedule, "start_time": startTime, "instructor": instructor})
+                schedule_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Schedule": schedule, "Time": startTime, "Instructor": instructor})
                 unique_schedule = schedule_count == 0
                 if not unique_schedule:
                     print("There's already an instructor with that start time. Try again")
@@ -456,7 +456,7 @@ def department_update_major(db, departmentAbbreviation, majorName):
         }
     )
 
-def add_enrollment(db):
+def add_enrollment(db): #I don't think i need this anymore, need to take a look
     collection = db["enrollments"]
     student = select_student(db)
     section = select_section(db)
@@ -480,6 +480,7 @@ def add_student_PassFail(db):
         enrollment = {
             "Student ID": student["_id"],
             "Section ID": section["_id"],
+            "Enrollment Type": "PassFail",
             "category_data":{
                 "applicationDate": datetime.now()
             }
@@ -495,11 +496,12 @@ def add_student_LetterGrade(db):
         collection = db["enrollments"]
         student = select_student(db)
         section = select_section(db)
-        grade = input("Enter the input: A, B, or C")
+        grade = input("Enter the input A, B, or C: ")
 
         enrollment = {
             "Student ID": student["_id"],
             "Section ID": section["_id"],
+            "Enrollment Type": "LetterGrade",
             "category_data":{
                 "minSatisfactory": grade
             }
@@ -508,6 +510,17 @@ def add_student_LetterGrade(db):
         return results
     except Exception as e:
         print(e)
+
+def enrollmentUniqueness(db, student, section):
+
+    section = select_section(db)
+    student = select_student(db)
+
+    ''''
+    student_count: int = db["sections"].count_documents(
+        {"semester": semester, "year": sectionYear, "department_abreviation: departmentAbbreviation,
+         "course_number": courseNumber,   "_id": studentID})
+    '''
 
 def select_department(db):
     collection = db["departments"]
@@ -606,12 +619,14 @@ def select_section(db):
     while not found:
         print("Please provide the course that this section belongs to:")
         course = select_course(db)
+        sectionNumber = int(input("Section Number: "))
         semester = input("semester: ")
         sectionYear = input("Section year: ")
         section_count = collection.count_documents(
             {
                 "Department Abbreviation": course["Department Abbreviation"],
                 "Course Number": course["Course Number"],
+                "Section Number": sectionNumber,
                 "Year": sectionYear,
                 "Semester": semester
             }
@@ -623,6 +638,7 @@ def select_section(db):
         {
             "Department Abbreviation": course["Department Abbreviation"],
             "Course Number": course["Course Number"],
+            "Section Number": sectionNumber,
             "Year": sectionYear,
             "Semester": semester
         }
@@ -882,21 +898,21 @@ course_validator = {
         '$jsonSchema': {
             'bsonType': "object",
             'description': "The classes offered in a program pertaining to an area of study ",
-            'required': ["course_number", "course_name", "description", "units"],
+            'required': ["Course Number", "Course Name", "description", "units"],
             'properties': {
-                'course_number': {
+                'Course Number': {
                     'bsonType': "int",
                     'minimum': 100,
                     'maximum': 699
                 },
-                'course_name': {
+                'Course Name': {
                     'bsonType': "string",
                     'minLength': 5,
                     'maxLength': 50
                 },
                 'description': {
                     'bsonType': "string",
-                    'minLength': 10,
+                    'minLength': 5,
                     'maxLength': 80
                 },
                 'units': {
