@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import os
 
+
 def add(db):
     add_action: str = ''
     while add_action != add_menu.last_action():
@@ -132,13 +133,14 @@ def add_course(db):
             number = int(input("Course number: "))
             description = input("Course description: ")
             unit = int(input("Course unit: "))
-            num_count: int = collection.count_documents({"abbreviation": abbreviation, "number": number})
+            num_count: int = collection.count_documents(
+                {"Department Abbreviation": abbreviation, "Course Number": number})
             unique_abbr_and_number = num_count == 0
             if not unique_abbr_and_number:
-                    print("We already have a course in that department with that number.  Try again.")
+                print("We already have a course in that department with that number.  Try again.")
             if unique_abbr_and_number:
-                    name_count = collection.count_documents({"abbreviation": abbreviation, "name": name})
-                    unique_abbr_and_name = name_count == 0
+                name_count = collection.count_documents({"Department Abbreviation": abbreviation, "Course Name": name})
+                unique_abbr_and_name = name_count == 0
         course = {
             "Department Abbreviation": abbreviation,
             "Course Number": number,
@@ -153,6 +155,8 @@ def add_course(db):
     except Exception as e:
         print(e)
         add_course(db)
+
+
 def department_update_course(db, abbreviation, number, name, unit):
     collection = db["courses"]
     found_course = collection.find_one(
@@ -177,6 +181,7 @@ def department_update_course(db, abbreviation, number, name, unit):
         }
     )
 
+
 def add_section(db):
     '''
     sectionNumber - Integer
@@ -193,75 +198,86 @@ def add_section(db):
     {semester, sectionYear, schedule, startTime, instructor}
     {semester, sectionYear, departmentAbbreviation, courseNumber, studentID}
     '''
-    collection = db["sections"]
-    course = select_course(db)
-    departmentAbbreviation = course["Department Abbreviation"]
-    courseNumber = course["Course Number"]
-    # semester = input("Semester: ")
-    # sectionYear = input("Year: ")
-    # building = input("Building: ")
-    # roomNumber = input("Room number: ")
-    # schedule = input("Schedule: ")
-    # startTime = input("start Time: ")
-    # instructor = input("Instructor: ")
-    unique_sem_and_year: bool = False
-    unique_room: bool = False
-    unique_schedule: bool = False
-    unique_student: bool = False
-    correct_time: bool = False
-    #studentID = _id #hello everyone i don't know how this works #TODO REALLY NEED TO CHECK HOW THIS WORK
+    try:
+        collection = db["sections"]
+        course = select_course(db)
+        departmentAbbreviation = course["Department Abbreviation"]
+        courseNumber = course["Course Number"]
+        # semester = input("Semester: ")
+        # sectionYear = input("Year: ")
+        # building = input("Building: ")
+        # roomNumber = input("Room number: ")
+        # schedule = input("Schedule: ")
+        # startTime = input("start Time: ")
+        # instructor = input("Instructor: ")
+        unique_sem_and_year: bool = False
+        unique_room: bool = False
+        unique_schedule: bool = False
+        unique_student: bool = False
+        correct_time: bool = False
+        # studentID = _id #hello everyone i don't know how this works #TODO REALLY NEED TO CHECK HOW THIS WORK
 
-    while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
-        sectionNumber = int(input("Section number: "))
-        semester = input("Semester: ")
-        sectionYear = int(input("Year: "))
-        building = input("Building: ")
-        roomNumber = int(input("Room number: "))
-        schedule = input("Schedule: ")
-        startTime = input("Please input hour:minute (24 Hour Time)--> ")
-        instructor = input("Instructor: ")
+        while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
+            sectionNumber = int(input("Section number: "))
+            semester = input("Semester: ")
+            sectionYear = int(input("Year: "))
+            building = input("Building: ")
+            roomNumber = int(input("Room number: "))
+            schedule = input("Schedule: ")
+            startTime = input("Please input hour:minute (24 Hour Time)--> ")
+            instructor = input("Instructor: ")
 
-        hour, minute = map(int, startTime.split(':'))
-        if 8 <= hour <= 19 or (hour == 19 and minute <= 30):
-            correct_time = True
-        else:
-            print("This is not a valid hour, it must be between 8 and 19:30 (8 AM to 7:30 PM)")
+            hour, minute = map(int, startTime.split(':'))
+            if 8 <= hour <= 19 or (hour == 19 and minute <= 30):
+                correct_time = True
+            else:
+                print("This is not a valid hour, it must be between 8 and 19:30 (8 AM to 7:30 PM)")
 
-        sem_and_year_count: int = collection.count_documents({"Course Number": courseNumber, "Section Number": sectionNumber, "Semester": semester, "Year": sectionYear})
-        unique_sem_and_year = sem_and_year_count == 0
-        if not unique_sem_and_year:
-            print("We already have a section with the same number going on in that school term. Try again.")
-        if unique_sem_and_year:
-            room_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Building": building, "Room": roomNumber, "Schedule": schedule, "Time": startTime})
-            unique_room = room_count == 0
-            if not unique_room:
-                print("We already have a section with the same time going on in that location. Try again.")
-            if unique_room:
-                schedule_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Schedule": schedule, "Time": startTime, "Instructor": instructor})
-                unique_schedule = schedule_count == 0
-                if not unique_schedule:
-                    print("There's already an instructor with that start time. Try again")
-                if unique_schedule:
-                    student_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Department Abbreviation": departmentAbbreviation, "Course Number": courseNumber})#"_id": studentID})
-                    unique_student = student_count == 0
-                    
+            sem_and_year_count: int = collection.count_documents(
+                {"Course Number": courseNumber, "Section Number": sectionNumber, "Semester": semester, "Year": sectionYear})
+            unique_sem_and_year = sem_and_year_count == 0
+            if not unique_sem_and_year:
+                print("We already have a section with the same number going on in that school term. Try again.")
+            if unique_sem_and_year:
+                room_count: int = collection.count_documents(
+                    {"Semester": semester, "Year": sectionYear, "Building": building, "Room": roomNumber,
+                     "Schedule": schedule, "Time": startTime})
+                unique_room = room_count == 0
+                if not unique_room:
+                    print("We already have a section with the same time going on in that location. Try again.")
+                if unique_room:
+                    schedule_count: int = collection.count_documents(
+                        {"Semester": semester, "Year": sectionYear, "Schedule": schedule, "Time": startTime,
+                         "Instructor": instructor})
+                    unique_schedule = schedule_count == 0
+                    if not unique_schedule:
+                        print("There's already an instructor with that start time. Try again")
+                    if unique_schedule:
+                        student_count: int = collection.count_documents(
+                            {"Semester": semester, "Year": sectionYear, "Department Abbreviation": departmentAbbreviation,
+                             "Course Number": courseNumber})  # "_id": studentID})
+                        unique_student = student_count == 0
 
-    section = {
-        "Department Abbreviation": departmentAbbreviation,
-        "Course Number": courseNumber,
-        "Section Number": sectionNumber,
-        "Semester": semester,
-        "Year": sectionYear,
-        "Building": building,
-        "Room": roomNumber,
-        "Schedule": schedule,
-        "Time": startTime,
-        "Instructor": instructor,
-        "enrollments": []
-    }
-    results = collection.insert_one(section)
-    course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
-    return results
+        section = {
+            "Department Abbreviation": departmentAbbreviation,
+            "Course Number": courseNumber,
+            "Section Number": sectionNumber,
+            "Semester": semester,
+            "Year": sectionYear,
+            "Building": building,
+            "Room": roomNumber,
+            "Schedule": schedule,
+            "Time": startTime,
+            "Instructor": instructor,
+            "enrollments": []
+        }
+        results = collection.insert_one(section)
+        course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
+        return results
+    except Exception as e:
+        print(e)
+        add_section(db)
+
 
 def course_update_section(db, departmentAbbreviation, courseNumber, semester, year, building, room):
     course = db["courses"]
@@ -321,7 +337,7 @@ def add_student(db):
         lastName = input("Student last name: ")
         firstName = input("Student first name: ")
         email = input("Student email: ")
-        name_count: int = collection.count_documents({"lastName": lastName, "firstName": firstName})
+        name_count: int = collection.count_documents({"Last Name": lastName, "First Name": firstName})
         unique_name = name_count == 0
         if not unique_name:
             print("There is already a student by that name. Try again")
@@ -335,11 +351,13 @@ def add_student(db):
         "Last Name": lastName,
         "First Name": firstName,
         "email": email,
-        "major": []
+        "major": [],
+        "enrollment": []
     }
 
     results = collection.insert_one(student)
     return results
+
 
 def add_major(db):
     collection = db["majors"]
@@ -352,7 +370,7 @@ def add_major(db):
     while not unique_name:
         majorName = input("Major name: ")
         description = input("Description: ")
-        name_count: int = collection.count_documents({"major_name": majorName})
+        name_count: int = collection.count_documents({"Major Name": majorName})
         unique_name = name_count == 0
         if not unique_name:
             print("There is already a major by that name. Try again.")
@@ -366,6 +384,7 @@ def add_major(db):
     results = collection.insert_one(major)
     department_update_major(db, departmentAbbreviation, majorName)
     return results
+
 
 def add_student_major(db):
     student = {}
@@ -385,26 +404,27 @@ def add_student_major(db):
     db["students"].update_many(
         {'_id': student["_id"]},
         {'$push':
-             {
-                 "major":{
-                     'Major ID': major["_id"],
-                     'Major Name': major["Major Name"]
-                 }
-             }
+            {
+                "major": {
+                    'Major ID': major["_id"],
+                    'Major Name': major["Major Name"]
+                }
+            }
         }
     )
     db["majors"].update_many(
         {'_id': major["_id"]},
         {'$push':
-             {
-                 "Students":{
-                     'Student ID': student["_id"],
-                     'Last Name': student["Last Name"],
-                     'First Name': student["First Name"]
-                 }
-             }
+            {
+                "Students": {
+                    'Student ID': student["_id"],
+                    'Last Name': student["Last Name"],
+                    'First Name': student["First Name"]
+                }
+            }
         }
     )
+
 
 def add_major_student(db):
     major = {}
@@ -445,9 +465,11 @@ def add_major_student(db):
             }
         }
     )
+
+
 def department_update_major(db, departmentAbbreviation, majorName):
     collection = db["majors"]
-    found_major= collection.find_one(
+    found_major = collection.find_one(
         {"Department Abbreviation": departmentAbbreviation,
          "Major Name": majorName
          }
@@ -464,7 +486,8 @@ def department_update_major(db, departmentAbbreviation, majorName):
         }
     )
 
-def add_enrollment(db): #I don't think i need this anymore, need to take a look
+
+def add_enrollment(db):  # I don't think i need this anymore, need to take a look
     collection = db["enrollments"]
     student = select_student(db)
     section = select_section(db)
@@ -479,26 +502,36 @@ def add_enrollment(db): #I don't think i need this anymore, need to take a look
     results = collection.insert_one(enrollment)
     return results
 
+
 def add_student_PassFail(db):
     try:
         collection = db["enrollments"]
-        student = select_student(db)
-        section = select_section(db)
-        uniqueCheck = enrollmentUniqueness(db, section, student)
-        if not uniqueCheck:
-            print("The section and student are not unique!")
-            return
+        student = {}
+        section = {}
+        uniqueStudentSection: bool = False
+        while not uniqueStudentSection:
+            student = select_student(db)
+            section = select_section(db)
+            student_section_count: int = collection.count_documents(
+                {"Student ID": student["_id"], "Section ID": section["_id"]})
+            uniqueStudentSection = student_section_count == 0
+            if not uniqueStudentSection:
+                print("The enrollment's student and section is not unique.  Try again")
+            if uniqueStudentSection:
+                uniqueCheck = enrollmentUniqueness(db, section, student)
+                if not uniqueCheck:
+                    print("The student is already enrolled in this section!")
 
         enrollment = {
             "Student ID": student["_id"],
             "Section ID": section["_id"],
             "Enrollment Type": "PassFail",
-            "category_data":{
+            "category_data": {
                 "applicationDate": datetime.now()
             }
         }
         results = collection.insert_one(enrollment)
-        section_update_major(db, section, student)
+        section_update_enrollment(db, section, student)
         return results
     except Exception as e:
         print(e)
@@ -520,17 +553,18 @@ def add_student_LetterGrade(db):
             "Student ID": student["_id"],
             "Section ID": section["_id"],
             "Enrollment Type": "LetterGrade",
-            "category_data":{
+            "category_data": {
                 "minSatisfactory": grade
             }
         }
         results = collection.insert_one(enrollment)
-        section_update_major(db, section, student)
+        section_update_enrollment(db, section, student)
         return results
     except Exception as e:
         print(e)
 
-def section_update_major(db, section, student):
+
+def section_update_enrollment(db, section, student):
     enrollment = db["enrollments"].find_one({"Student ID": student["_id"], "Section ID": section["_id"]})
 
     db["sections"].update_many(
@@ -550,29 +584,47 @@ def section_update_major(db, section, student):
             }
         }
     )
+    db["students"].update_many(
+        {'_id': student["_id"]},
+        {'$push':
+            {
+                "enrollment": {
+                    'Section ID': section["_id"],
+                    'Enrollment ID': enrollment["_id"],
+                    'Enrollment Type': enrollment["Enrollment Type"]
+                }
+            }
+        }
+    )
+
 
 '''
 Return: True - not unique, False - Unique
 '''
+
+
 def enrollmentUniqueness(db, section, student):
     student_count = 0
-    #count the section collection for semester, year, DA, CN
+    # count the section collection for semester, year, DA, CN
     section_count: int = db["sections"].count_documents(
-        {"Semester": section["Semester"], "Year": section["Year"], "Department Abbreviation": section["Department Abbreviation"],
+        {"Semester": section["Semester"], "Year": section["Year"],
+         "Department Abbreviation": section["Department Abbreviation"],
          "Course Number": section["Course Number"]})
     print(section_count)
-    #Student_count, count if there is match in the section array
+    # Student_count, count if there is match in the section array
     for object in section["enrollments"]:
         if object["Student ID"] == student["_id"]:
             student_count += 1
 
     print(student_count)
-    #If the student count and section count matches, that means it's not unique
+    # If the student count and section count matches, that means it's not unique
     result = student_count == section_count
+    '''
     if not result is True:
         print("This bitch is unique")
     else:
         print("This bitch is not unique")
+    '''
     return not result
 
 
@@ -589,6 +641,7 @@ def select_department(db):
             print("No department with that abbreviation.  Try again.")
     found_department = collection.find_one({"abbreviation": abbreviation})
     return found_department
+
 
 def select_course(db):
     collection = db["courses"]
@@ -616,6 +669,7 @@ def select_course(db):
     )
     return found_course
 
+
 def select_student(db):
     collection = db["students"]
 
@@ -642,6 +696,7 @@ def select_student(db):
     )
     return found_student
 
+
 def select_major(db):
     collection = db["majors"]
 
@@ -665,6 +720,7 @@ def select_major(db):
         }
     )
     return found_major
+
 
 def select_section(db):
     collection = db["sections"]
@@ -699,21 +755,6 @@ def select_section(db):
     )
     return found_section
 
-'''
-I blatantly stole this from professor's subschema code.
-Looks useful tho.
-God I hope someone reads this documentation
-'''
-def drop_collection(schema_ref, collection_name: str):
-    """
-    Little utility for dropping collections and letting the user know.
-    :param schema_ref:          The reference to the current schema.
-    :param collection_name:     The name of the collection to drop within that schema.
-    :return:                    None
-    """
-    if collection_name in schema_ref.list_collection_names():
-        print(f'Dropping collection: {collection_name}')
-        schema_ref[collection_name].drop()
 
 def delete_department(db):
     department = select_department(db)
@@ -726,6 +767,7 @@ def delete_department(db):
     departments = db["departments"]
     deleted = departments.delete_one({"_id": department["_id"]})
     print(f"We just deleted: {deleted.deleted_count} departments.")
+
 
 def delete_course(db):
     course = select_course(db)
@@ -749,6 +791,7 @@ def delete_course(db):
     )
     print(f"We just deleted: {deleted.deleted_count} courses")
 
+
 def delete_student(db):
     student = select_student(db)
 
@@ -758,6 +801,7 @@ def delete_student(db):
     students = db["students"]
     deleted = students.delete_one({"_id": student["_id"]})
     print(f"We just deleted: {deleted.deleted_count} students")
+
 
 def delete_major(db):
     major = select_major(db)
@@ -779,6 +823,7 @@ def delete_major(db):
     )
     print(f"We just deleted: {deleted.deleted_count} majors.")
 
+
 def delete_student_major(db):
     student = select_student(db)
     major = select_major(db)
@@ -790,7 +835,7 @@ def delete_student_major(db):
         {
             '$pull':
                 {
-                    'major':{
+                    'major': {
                         'Major ID': major["_id"]
                     }
                 }
@@ -803,7 +848,7 @@ def delete_student_major(db):
         {
             '$pull':
                 {
-                    'Students':{
+                    'Students': {
                         'Student ID': student["_id"]
                     }
                 }
@@ -842,7 +887,42 @@ def delete_major_student(db):
         }
     )
 
-def delete_section(db): #TODO
+
+def delete_student_section(db):
+    student = select_student(db)
+    section = select_section(db)
+
+    db["sections"].update_many(
+        {
+            '_id': section["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'enrollments':{
+                        'Student ID': student["_id"]
+                    }
+                }
+        }
+    )
+    db["students"].update_many(
+        {
+            '_id': student["_id"]
+        },
+        {
+            '$pull':
+                {
+                    'enrollment': {
+                        'Section ID': section["_id"]
+                    }
+                }
+        }
+    )
+    deleted = db["enrollments"].delete_one({"Student ID": student["_id"], "Section ID": section["_id"]})
+    print(f"We just deleted: {deleted.deleted_count} enrollments.")
+
+
+def delete_section(db):  # TODO
     section = select_section(db)
     sections = db["sections"]
     db["courses"].update_many(
@@ -853,7 +933,7 @@ def delete_section(db): #TODO
         {
             '$pull':
                 {
-                    'sections':{
+                    'sections': {
                         'Section ID': section["_id"]
                     }
                 }
@@ -862,40 +942,65 @@ def delete_section(db): #TODO
     deleted = sections.delete_one({"_id": section["_id"]})
     print(f"We just deleted: {deleted.deleted_count} sections.")
 
+
 def list_departments(db):
     departments = db["departments"].find({}).sort([("name", pymongo.ASCENDING)])
     for department in departments:
         pprint(department)
+
 
 def list_course(db):
     courses = db["courses"].find({}).sort([("Course Name", pymongo.ASCENDING)])
     for course in courses:
         pprint(course)
 
+
 def list_major(db):
     majors = db["majors"].find({}).sort([("Major Name", pymongo.ASCENDING)])
     for major in majors:
         pprint(major)
+
 
 def list_student(db):
     students = db["students"].find({}).sort([("Last Name", pymongo.ASCENDING)])
     for student in students:
         pprint(student)
 
+
 def list_section(db):
     sections = db["sections"].find({}).sort([("Last Name", pymongo.ASCENDING)])
     for section in sections:
         pprint(section)
+
 
 def list_student_major(db):
     student = select_student(db)
     for i in student["major"]:
         print(i)
 
+
 def list_major_student(db):
     major = select_major(db)
     for i in major["Students"]:
         print(i)
+
+
+def list_student_section(db):
+    student = select_student(db)
+    for i in student["enrollment"]:
+        print(i)
+
+
+def list_section_student(db):
+    section = select_section(db)
+    for i in section["enrollments"]:
+        print(i)
+
+
+def list_enrollment(db):
+    enrollments = db["enrollments"].find({})
+    for enrollment in enrollments:
+        pprint(enrollment)
 
 
 def list_objects(db):
@@ -985,35 +1090,36 @@ sections_validator = {
             'bsonType': "object",
             'description': "An organization that offers one or more degree programs within a college, "
                            "within a university",
-            'required': ["sectionNumber", "semester", "sectionYear", "building", "room", "schedule", "startTime", "instructor"],
+            'required': ["Section Number", "Semester", "Year", "Building", "Room", "Schedule", "Time",
+                         "Instructor"],
             'properties': {
-                'sectionNumber': {
+                'Section Number': {
                     'bsonType': "int",
                 },
-                'semester': {
+                'Semester': {
                     'bsonType': "string",
                     'enum': ["Fall", "Spring", "Summer I", "Summer II", "Summer III", "Winter"]
                 },
-                'sectionYear': {
+                'Year': {
                     'bsonType': "int",
                 },
-                'building': {
+                'Building': {
                     'bsonType': "string",
                     'enum': ["ANAC", "CDC", "DC", "ECS", "EN2", "EN3", "EN4", "EN5", "ET", "HSCI", "NUR", "VEC"]
                 },
-                'room': {
+                'Room': {
                     'bsonType': "int",
                     'minLength': 0,
                     'maxLength': 1000
                 },
-                'schedule': {
+                'Schedule': {
                     'bsonType': "string",
                     'enum': ["MW", "TuTH", "MWF", "F", "S"]
                 },
-                'startTime': {
-                    'bsonType': "datetime",
+                'Time': {
+                    'bsonType': "string",
                 },
-                'instructor': {
+                'Instructor': {
                     'bsonType': "string",
                 }
             }
@@ -1031,7 +1137,7 @@ enrollment_validator = {
             'properties': {
                 '_id': {},
                 'category_data': {
-                    'oneOf':[
+                    'oneOf': [
                         {
                             'bsonType': 'object',
                             'required': ['applicationDate'],
@@ -1047,7 +1153,7 @@ enrollment_validator = {
                             'required': ['minSatisfactory'],
                             'additionalProperties': False,
                             'properties': {
-                                'minSatisfactory' : {
+                                'minSatisfactory': {
                                     'bsonType': 'string',
                                     'enum': ["A", "B", "C"]
                                 }
@@ -1076,6 +1182,7 @@ if __name__ == '__main__':
     # Ask if this is how you add the department_validator
     db.command('collMod', 'departments', **department_validator)
     db.command('collMod', 'courses', **course_validator)
+    db.command('collMod', 'sections', **sections_validator)
     db.command('collMod', 'enrollments', **enrollment_validator)
 
     department_count = departments.count_documents({})
