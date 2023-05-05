@@ -9,6 +9,7 @@ from menu_definitions import add_menu
 from menu_definitions import delete_menu
 from menu_definitions import list_menu
 from dotenv import load_dotenv
+from datetime import datetime
 import os
 
 def add(db):
@@ -109,45 +110,49 @@ def add_course(db):
     {departmentAbbreviation, courseNumber}  
     {departmentAbbreviation, courseName}
     '''
-    collection = db["courses"]
-    department = select_department(db)
-    abbreviation = department["abbreviation"]
-    # number = input("Course number: ")
-    # name = input("Course Name: ")
-    # description = input("Course description: ")
-    # unit = input("Course unit: ")
+    try:
+        collection = db["courses"]
+        department = select_department(db)
+        abbreviation = department["abbreviation"]
+        # number = input("Course number: ")
+        # name = input("Course Name: ")
+        # description = input("Course description: ")
+        # unit = input("Course unit: ")
 
-    unique_abbr_and_number: bool = False
-    unique_abbr_and_name: False
-    
-    name: str = ''
-    number: int = -1
-    description = str = ''
-    unit: int = -1
+        unique_abbr_and_number: bool = False
+        unique_abbr_and_name: False
 
-    while not unique_abbr_and_number or not unique_abbr_and_name:
-        name = input("Course Name: ")
-        number = int(input("Course number: "))
-        description = input("Course description: ")
-        unit = int(input("Course unit: "))
-        num_count: int = collection.count_documents({"abbreviation": abbreviation, "number": number})
-        unique_abbr_and_number = num_count == 0
-        if not unique_abbr_and_number:
-                print("We already have a course in that department with that number.  Try again.")
-        if unique_abbr_and_number:
-                name_count = collection.count_documents({"abbreviation": abbreviation, "name": name})
-                unique_abbr_and_name = name_count == 0
-    course = {
-        "Department Abbreviation": abbreviation,
-        "Course Number": number,
-        "Course Name": name,
-        "description": description,
-        "units": unit,
-        "sections": []
-    }
-    results = collection.insert_one(course)
-    department_update_course(db, abbreviation, number, name, unit)
-    return results
+        name: str = ''
+        number: int = -1
+        description = str = ''
+        unit: int = -1
+
+        while not unique_abbr_and_number or not unique_abbr_and_name:
+            name = input("Course Name: ")
+            number = int(input("Course number: "))
+            description = input("Course description: ")
+            unit = int(input("Course unit: "))
+            num_count: int = collection.count_documents({"abbreviation": abbreviation, "number": number})
+            unique_abbr_and_number = num_count == 0
+            if not unique_abbr_and_number:
+                    print("We already have a course in that department with that number.  Try again.")
+            if unique_abbr_and_number:
+                    name_count = collection.count_documents({"abbreviation": abbreviation, "name": name})
+                    unique_abbr_and_name = name_count == 0
+        course = {
+            "Department Abbreviation": abbreviation,
+            "Course Number": number,
+            "Course Name": name,
+            "description": description,
+            "units": unit,
+            "sections": []
+        }
+        results = collection.insert_one(course)
+        department_update_course(db, abbreviation, number, name, unit)
+        return results
+    except Exception as e:
+        print(e)
+        add_course(db)
 def department_update_course(db, abbreviation, number, name, unit):
     collection = db["courses"]
     found_course = collection.find_one(
@@ -203,7 +208,7 @@ def add_section(db):
     unique_room: bool = False
     unique_schedule: bool = False
     unique_student: bool = False
-    studentID = _id #hello everyone i don't know how this works
+    #studentID = _id #hello everyone i don't know how this works #TODO
 
     while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student:
         sectionNumber = int(input("Section number: "))
@@ -229,21 +234,22 @@ def add_section(db):
                 if not unique_schedule:
                     print("There's already an instructor with that start time. Try again")
                 if unique_schedule:
-                    student_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "department_abbrevation": departmentAbbreviation, "course_number": courseNumber, "_id": studentID})
+                    student_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "department_abbrevation": departmentAbbreviation, "course_number": courseNumber})#"_id": studentID})
                     unique_student = student_count == 0
                     
 
     section = {
-        "department_abbreviation": departmentAbbreviation,
-        "course_number": courseNumber,
-        "section_number": sectionNumber,
-        "semester": semester,
-        "year": sectionYear,
-        "building": building,
-        "room": roomNumber,
-        "schedule": schedule,
-        "start_time": startTime,
-        "instruction": instructor
+        "Department Abbreviation": departmentAbbreviation,
+        "Course Number": courseNumber,
+        "Section Number": sectionNumber,
+        "Semester": semester,
+        "Year": sectionYear,
+        "Building": building,
+        "Room": roomNumber,
+        "Schedule": schedule,
+        "Time": startTime,
+        "Instructor": instructor,
+        "students": []
     }
     results = collection.insert_one(section)
     course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
@@ -465,6 +471,44 @@ def add_enrollment(db):
     results = collection.insert_one(enrollment)
     return results
 
+def add_student_PassFail(db):
+    try:
+        collection = db["enrollments"]
+        student = select_student(db)
+        section = select_section(db)
+
+        enrollment = {
+            "Student ID": student["_id"],
+            "Section ID": section["_id"],
+            "category_data":{
+                "applicationDate": datetime.now()
+            }
+        }
+        results = collection.insert_one(enrollment)
+        return results
+    except Exception as e:
+        print(e)
+
+
+def add_student_LetterGrade(db):
+    try:
+        collection = db["enrollments"]
+        student = select_student(db)
+        section = select_section(db)
+        grade = input("Enter the input: A, B, or C")
+
+        enrollment = {
+            "Student ID": student["_id"],
+            "Section ID": section["_id"],
+            "category_data":{
+                "minSatisfactory": grade
+            }
+        }
+        results = collection.insert_one(enrollment)
+        return results
+    except Exception as e:
+        print(e)
+
 def select_department(db):
     collection = db["departments"]
 
@@ -484,12 +528,12 @@ def select_course(db):
 
     found: bool = False
     departmentAbbreviation: str = ''
-    courseNumber: str = ''
+    courseNumber: int = ''
     while not found:
-        departmentAbbreviation = input("Enter the department abbreviation: ")
-        courseNumber = input("Enter the course number: ")
+        departmentAbbreviation = input("Enter the department abbreviation--> ")
+        courseNumber = int(input("Enter the course number--> "))
 
-        course_count = collection.count_documents(
+        course_count = db["courses"].count_documents(
             {
                 "Department Abbreviation": departmentAbbreviation,
                 "Course Number": courseNumber
@@ -555,8 +599,7 @@ def select_major(db):
     )
     return found_major
 
-def select_section(db):  # TODO
-    #NEED TO DOUBLE CHECK IF THIS IS THE CORRECT WAY TO SELECT SECTION
+def select_section(db):
     collection = db["sections"]
 
     found: bool = False
@@ -605,15 +648,22 @@ def drop_collection(schema_ref, collection_name: str):
 def delete_department(db):
     department = select_department(db)
 
+    if len(department["courses"]) != 0:
+        print("Can't delete department because there are some courses in this department!")
+        return
+    if len(department["majors"]) != 0:
+        print("Can't delete department because there are some majors in this department!")
     departments = db["departments"]
     deleted = departments.delete_one({"_id": department["_id"]})
     print(f"We just deleted: {deleted.deleted_count} departments.")
 
 def delete_course(db):
     course = select_course(db)
+    '''
     if len(course["sections"]) != 0:
         print("Can't delete course because there are some sections in this course!")
         return
+    '''
     courses = db["courses"]
 
     deleted = courses.delete_one({"_id": course["_id"]})
@@ -631,6 +681,10 @@ def delete_course(db):
 
 def delete_student(db):
     student = select_student(db)
+
+    if len(student["major"]) != 0:
+        print("Can't delete student, must remove student's major")
+        return
     students = db["students"]
     deleted = students.delete_one({"_id": student["_id"]})
     print(f"We just deleted: {deleted.deleted_count} students")
@@ -638,6 +692,9 @@ def delete_student(db):
 def delete_major(db):
     major = select_major(db)
 
+    if len(major["Students"]) != 0:
+        print("Can't delete major, must remove student that are enrolled in this major")
+        return
     majors = db["majors"]
     deleted = majors.delete_one({"_id": major["_id"]})
     db["departments"].update_many(
@@ -900,32 +957,28 @@ enrollment_validator = {
             'bsonType': "object",
             'description': "An organization that offers one or more degree programs within a college, "
                            "within a university",
-            # 'required': ["name", "abbreviation", "chair_name", "building", "office", "description"],
             'required': ['category_data'],
             'properties': {
+                '_id': {},
                 'category_data': {
                     'oneOf':[
                         {
-                            #PassFail
                             'bsonType': 'object',
                             'required': ['applicationDate'],
                             'additionalProperties': False,
                             'properties': {
-                                'applicationDate' : {
+                                'applicationDate': {
                                     'bsonType': 'date',
-                                    'min': Date()
                                 }
                             }
-                        }, 
-
+                        },
                         {
-                            #LetterGrade
                             'bsonType': 'object',
                             'required': ['minSatisfactory'],
                             'additionalProperties': False,
                             'properties': {
                                 'minSatisfactory' : {
-                                    'bsonType': 'String',
+                                    'bsonType': 'string',
                                     'enum': ["A", "B", "C"]
                                 }
                             }
@@ -949,8 +1002,12 @@ if __name__ == '__main__':
     majors = db["majors"]
     sections = db["sections"]
     students = db["students"]
+    enrollments = db["enrollments"]
     # Ask if this is how you add the department_validator
     db.command('collMod', 'departments', **department_validator)
+    db.command('collMod', 'courses', **course_validator)
+    db.command('collMod', 'enrollments', **enrollment_validator)
+
     department_count = departments.count_documents({})
     print(f"Departments in the collection so far: {department_count}")
 
@@ -990,6 +1047,10 @@ if __name__ == '__main__':
         print("courseNumber index present")
     else:
         courses.create_index([('Course Number', pymongo.ASCENDING)], unique=True, name="course_number")
+    if 'courseDepartmentName' in courses_index.keys():
+        print("course department index present")
+    else:
+        courses.create_index([('Department Abbreviation', pymongo.ASCENDING)], name="courseDepartmentName")
 
     students_index = students.index_information()
     if 'last_name' in students_index.keys():

@@ -29,6 +29,8 @@ add_menu = Menu('add', 'Please indicate what you want to add:', [
         Option("Section", "add_section(db)"),
         Option("Student to Major", "add_student_major(db)"),
         Option("Major to Student", "add_major_student(db)"),
+        Option("Student to PassFail", "add_student_PassFail(db)"),
+        Option("Student to LetterGrade", "add_student_LetterGrade(db)"),
     Option("Exit", "pass")
 ])
 
