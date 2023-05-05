@@ -101,16 +101,16 @@ def add_department(db):
 
 
 def add_course(db):
-    '''
+    """
     courseNumber - Int
     courseName - String
     description - String
     units - Int
 
 
-    {departmentAbbreviation, courseNumber}  
+    {departmentAbbreviation, courseNumber}
     {departmentAbbreviation, courseName}
-    '''
+    """
     try:
         collection = db["courses"]
         department = select_department(db)
@@ -121,11 +121,11 @@ def add_course(db):
         # unit = input("Course unit: ")
 
         unique_abbr_and_number: bool = False
-        unique_abbr_and_name: False
+        unique_abbr_and_name:bool = False
 
         name: str = ''
         number: int = -1
-        description = str = ''
+        description: str = ''
         unit: int = -1
 
         while not unique_abbr_and_number or not unique_abbr_and_name:
@@ -183,7 +183,7 @@ def department_update_course(db, abbreviation, number, name, unit):
 
 
 def add_section(db):
-    '''
+    """
     sectionNumber - Integer
     semester - String
     sectionYear - Integer
@@ -193,11 +193,11 @@ def add_section(db):
     startTime - Time
     instructor - String
 
-    {couse, sectionNumber, semester, sectionYear}
-    {semester, sectionyear, building, room, schedule, startTime}
+    {course, sectionNumber, semester, sectionYear}
+    {semester, sectionYear, building, room, schedule, startTime}
     {semester, sectionYear, schedule, startTime, instructor}
     {semester, sectionYear, departmentAbbreviation, courseNumber, studentID}
-    '''
+    """
     try:
         collection = db["sections"]
         course = select_course(db)
@@ -215,7 +215,6 @@ def add_section(db):
         unique_schedule: bool = False
         unique_student: bool = False
         correct_time: bool = False
-        # studentID = _id #hello everyone i don't know how this works #TODO REALLY NEED TO CHECK HOW THIS WORK
 
         while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
             sectionNumber = int(input("Section number: "))
@@ -252,11 +251,6 @@ def add_section(db):
                     unique_schedule = schedule_count == 0
                     if not unique_schedule:
                         print("There's already an instructor with that start time. Try again")
-                    if unique_schedule:
-                        student_count: int = collection.count_documents(
-                            {"Semester": semester, "Year": sectionYear, "Department Abbreviation": departmentAbbreviation,
-                             "Course Number": courseNumber})  # "_id": studentID})
-                        unique_student = student_count == 0
 
         section = {
             "Department Abbreviation": departmentAbbreviation,
@@ -311,7 +305,7 @@ def course_update_section(db, departmentAbbreviation, courseNumber, semester, ye
 
 
 def add_student(db):
-    '''
+    """
     lastName: String
     firstName: String
     email: String
@@ -319,8 +313,8 @@ def add_student(db):
 
     {lastName, firstName}
     {email}
-    {_id} <-- aaccording to my research this should already be unique but if im wrong then im boo boo the fool
-    '''
+    {_id} <-- according to my research this should already be unique but if im wrong then im boo boo the fool
+    """
     collection = db["students"]
     # lastName = input("Student last name: ")
     # firstName = input("Student first name: ")
@@ -725,6 +719,10 @@ def select_major(db):
 def select_section(db):
     collection = db["sections"]
 
+    course = {}
+    sectionNumber: int = -1
+    sectionYear: int = -1
+    semester: str = ""
     found: bool = False
     while not found:
         print("Please provide the course that this section belongs to:")
@@ -771,11 +769,11 @@ def delete_department(db):
 
 def delete_course(db):
     course = select_course(db)
-    '''
+
     if len(course["sections"]) != 0:
         print("Can't delete course because there are some sections in this course!")
         return
-    '''
+
     courses = db["courses"]
 
     deleted = courses.delete_one({"_id": course["_id"]})
@@ -797,6 +795,9 @@ def delete_student(db):
 
     if len(student["major"]) != 0:
         print("Can't delete student, must remove student's major")
+        return
+    if len(student["enrollment"]):
+        print("Can't delete student, must remove student's enrollment")
         return
     students = db["students"]
     deleted = students.delete_one({"_id": student["_id"]})
@@ -922,9 +923,12 @@ def delete_student_section(db):
     print(f"We just deleted: {deleted.deleted_count} enrollments.")
 
 
-def delete_section(db):  # TODO
+def delete_section(db):
     section = select_section(db)
     sections = db["sections"]
+    if len(section["enrollments"]) != 0:
+        print("Can't delete section, must remove student that are enrolled in this section")
+        return
     db["courses"].update_many(
         {
             'Department Abbreviation': section["Department Abbreviation"],
