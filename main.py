@@ -208,17 +208,25 @@ def add_section(db):
     unique_room: bool = False
     unique_schedule: bool = False
     unique_student: bool = False
+    correct_time: bool = False
     #studentID = _id #hello everyone i don't know how this works #TODO REALLY NEED TO CHECK HOW THIS WORK
 
-    while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student:
+    while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
         sectionNumber = int(input("Section number: "))
         semester = input("Semester: ")
         sectionYear = input("Year: ")
         building = input("Building: ")
         roomNumber = input("Room number: ")
         schedule = input("Schedule: ")
-        startTime = input("start Time: ")
+        startTime = input("Please input hour:minute (24 Hour Time)--> ")
         instructor = input("Instructor: ")
+
+        hour, minute = map(int, startTime.split(':'))
+        if 8 <= hour <= 19 or (hour == 19 and minute <= 30):
+            correct_time = True
+        else:
+            print("This is not a valid hour, it must be between 8 and 19:30 (8 AM to 7:30 PM)")
+
         sem_and_year_count: int = collection.count_documents({"Course Number": courseNumber, "Section Number": sectionNumber, "Semester": semester, "Year": sectionYear})
         unique_sem_and_year = sem_and_year_count == 0
         if not unique_sem_and_year:
@@ -234,7 +242,7 @@ def add_section(db):
                 if not unique_schedule:
                     print("There's already an instructor with that start time. Try again")
                 if unique_schedule:
-                    student_count: int = collection.count_documents({"semester": semester, "year": sectionYear, "department_abbrevation": departmentAbbreviation, "course_number": courseNumber})#"_id": studentID})
+                    student_count: int = collection.count_documents({"Semester": semester, "Year": sectionYear, "Department Abbreviation": departmentAbbreviation, "Course Number": courseNumber})#"_id": studentID})
                     unique_student = student_count == 0
                     
 
