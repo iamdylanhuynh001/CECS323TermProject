@@ -213,10 +213,9 @@ def add_section(db):
         unique_sem_and_year: bool = False
         unique_room: bool = False
         unique_schedule: bool = False
-        unique_student: bool = False
         correct_time: bool = False
 
-        while not unique_sem_and_year or not unique_room or not unique_schedule or not unique_student or not correct_time:
+        while not unique_sem_and_year or not unique_room or not unique_schedule or not correct_time:
             sectionNumber = int(input("Section number: "))
             semester = input("Semester: ")
             sectionYear = int(input("Year: "))
@@ -604,21 +603,13 @@ def enrollmentUniqueness(db, section, student):
         {"Semester": section["Semester"], "Year": section["Year"],
          "Department Abbreviation": section["Department Abbreviation"],
          "Course Number": section["Course Number"]})
-    print(section_count)
     # Student_count, count if there is match in the section array
     for object in section["enrollments"]:
         if object["Student ID"] == student["_id"]:
             student_count += 1
 
-    print(student_count)
     # If the student count and section count matches, that means it's not unique
     result = student_count == section_count
-    '''
-    if not result is True:
-        print("This bitch is unique")
-    else:
-        print("This bitch is not unique")
-    '''
     return not result
 
 
