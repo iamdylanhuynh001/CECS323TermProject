@@ -96,7 +96,7 @@ def add_department(db):
         results = collection.insert_one(department)
         return results
     except Exception as e:
-        print(e)
+        pprint(e)
         add_department(db)
 
 
@@ -153,7 +153,7 @@ def add_course(db):
         department_update_course(db, abbreviation, number, name, unit)
         return results
     except Exception as e:
-        print(e)
+        pprint(e)
         add_course(db)
 
 
@@ -268,7 +268,7 @@ def add_section(db):
         course_update_section(db, departmentAbbreviation, courseNumber, semester, sectionYear, building, roomNumber)
         return results
     except Exception as e:
-        print(e)
+        pprint(e)
         add_section(db)
 
 
@@ -400,7 +400,8 @@ def add_student_major(db):
             {
                 "major": {
                     'Major ID': major["_id"],
-                    'Major Name': major["Major Name"]
+                    'Major Name': major["Major Name"],
+                    'Declaration Date': datetime.now()
                 }
             }
         }
@@ -412,7 +413,8 @@ def add_student_major(db):
                 "Students": {
                     'Student ID': student["_id"],
                     'Last Name': student["Last Name"],
-                    'First Name': student["First Name"]
+                    'First Name': student["First Name"],
+                    'Declaration Date': datetime.now()
                 }
             }
         }
@@ -441,7 +443,8 @@ def add_major_student(db):
             {
                 "major": {
                     'Major ID': major["_id"],
-                    'Major Name': major["Major Name"]
+                    'Major Name': major["Major Name"],
+                    'Declaration Date': datetime.now()
                 }
             }
         }
@@ -453,7 +456,8 @@ def add_major_student(db):
                 "Students": {
                     'Student ID': student["_id"],
                     'Last Name': student["Last Name"],
-                    'First Name': student["First Name"]
+                    'First Name': student["First Name"],
+                    'Declaration Date': datetime.now()
                 }
             }
         }
@@ -527,7 +531,7 @@ def add_student_PassFail(db):
         section_update_enrollment(db, section, student)
         return results
     except Exception as e:
-        print(e)
+        pprint(e)
 
 
 def add_student_LetterGrade(db):
@@ -554,7 +558,7 @@ def add_student_LetterGrade(db):
         section_update_enrollment(db, section, student)
         return results
     except Exception as e:
-        print(e)
+        pprint(e)
 
 
 def section_update_enrollment(db, section, student):
